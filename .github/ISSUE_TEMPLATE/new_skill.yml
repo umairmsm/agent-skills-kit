@@ -1,0 +1,29 @@
+name: New Skill Proposal
+description: Propose a new reusable agent skill for the Forge library.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a new modular skill for `.claude/skills/` or general AI agent workflows.
+  - type: input
+    id: skill-name
+    attributes:
+      label: Skill Name
+      placeholder: e.g. sqlite-turso-ops or kafka-event-patterns
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: Skill Purpose & Workflows
+      description: What specific tasks does this skill guide the agent through?
+    validations:
+      required: true
+  - type: input
+    id: attribution
+    attributes:
+      label: Origin / Attribution (if third-party or tribute)
+      placeholder: e.g. Native or https://github.com/upstream-author
+    validations:
+      required: false

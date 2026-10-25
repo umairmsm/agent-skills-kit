@@ -1,0 +1,41 @@
+name: Bug Report
+description: Report an issue with the forge CLI, a stack profile, or a bundled skill.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Forge!
+  - type: input
+    id: version
+    attributes:
+      label: Forge Version / Commit
+      placeholder: e.g. v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Forge CLI (bin/forge init, list, add, sync)
+        - Forge Doctor (bin/forge doctor)
+        - Stack Profile (profiles/*.profile)
+        - Skill Library (skills/*)
+        - Agent Templates (templates/*)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe what occurred and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Provide the commands and environment to reproduce.
+    validations:
+      required: true

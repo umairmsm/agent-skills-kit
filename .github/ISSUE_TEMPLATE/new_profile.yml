@@ -1,0 +1,30 @@
+name: New Profile Proposal
+description: Propose a new engineering stack profile for Forge.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a new stack profile (e.g. FastAPI, Astro, Django, Go microservices) to be scaffolded with `forge init`.
+  - type: input
+    id: profile-name
+    attributes:
+      label: Profile Name
+      placeholder: e.g. fastapi-pg or astro-static
+    validations:
+      required: true
+  - type: textarea
+    id: stack-details
+    attributes:
+      label: Technology Stack & Required Tools
+      description: What frameworks, package managers, and system tools does this profile require?
+      placeholder: e.g. python>=3.11, poetry, docker, postgresql
+    validations:
+      required: true
+  - type: textarea
+    id: skills-needed
+    attributes:
+      label: Recommended Skills
+      description: Which skills from the library (or new proposed skills) should be bundled?
+    validations:
+      required: true

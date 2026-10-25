@@ -4,6 +4,9 @@ bin/forge
 CHANGELOG.md
 CODE_OF_CONDUCT.md
 CONTRIBUTING.md
+.github/ISSUE_TEMPLATE/bug_report.yml
+.github/ISSUE_TEMPLATE/new_profile.yml
+.github/ISSUE_TEMPLATE/new_skill.yml
 .github/workflows/ci.yml
 .gitignore
 LICENSE
