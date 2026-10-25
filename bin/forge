@@ -77,8 +77,9 @@ cmd_init() {
   echo
   local choice
   read -r -p "Choose 1-${#names[@]}: " choice
-  [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#names[@]}" ] \
-    || no "invalid choice: $choice"
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#names[@]}" ]; then
+    no "invalid choice: $choice"
+  fi
   local profile="${names[$((choice-1))]}"
   load_profile "$profile"
 
@@ -289,8 +290,10 @@ cmd_doctor() {
     done < <(grep -h -m1 -o '"cwd":"[^"]*"' "$HOME/.claude/projects"/*/*.jsonl 2>/dev/null | sed -e 's/"cwd":"//' -e 's/"$//' | sort -u || true)
   fi
 
-  local ws_root
-  ws_root="$(cd "$FORGE_ROOT/../.." 2>/dev/null && pwd || true)"
+  local ws_root=""
+  if (cd "$FORGE_ROOT/../.." 2>/dev/null); then
+    ws_root="$(cd "$FORGE_ROOT/../.." 2>/dev/null && pwd)"
+  fi
   if [ -n "$ws_root" ] && [ -d "$ws_root" ] && [ "$ws_root" != "$HOME" ]; then
     scan_dirs+=("$ws_root")
   fi
