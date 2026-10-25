@@ -1,0 +1,5 @@
+LABEL="Static site (no backend)"
+BLURB="Hand-built or generator-produced static HTML/CSS/JS with no runtime. Playwright verification and rsync deploy. Lightest profile."
+SKILLS="static-export-build playwright-verify deploy-static-cpanel web-accessibility-wizard ux-researcher design-motion-principles context-budget agent-interop"
+TEMPLATE="AGENTS.md.static-site"
+TOOLS="node>=20 rsync openssh-client"

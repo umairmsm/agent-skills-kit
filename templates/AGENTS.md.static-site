@@ -1,0 +1,40 @@
+# <PROJECT_NAME> — shared agent context
+
+> **This is the one home for shared project facts.** Claude Code reads it natively;
+> Antigravity/Gemini reads it through `GEMINI.md`, a symlink to this file. Put anything
+> both agents need here. A tool-specific `CLAUDE.md` or `GEMINI.md` should hold only that
+> tool's own machinery or role — never a second copy of a fact from this file.
+>
+> Branches: Claude on `claude/<topic>`, Antigravity on `ag/<topic>`; neither on the
+> default branch unless the owner asks.
+
+Static HTML/CSS/JS, no runtime. Served from a domain root.
+
+## Project
+
+- **Site:** <SITE_URL>
+- **Deploy target:** <DEPLOY_TARGET>
+
+## Commands
+
+```bash
+npm run serve:export       # serve the build locally
+npm test                   # Playwright suites
+```
+
+## Hard rules
+
+- Internal links are root-absolute — the site **must** be served from a domain root.
+- Never deploy a `STAGING=1` build to production (it carries noindex).
+- Always `rsync --dry-run` before a real sync; `--delete` erases anything hand-placed.
+
+## Operating rules
+
+1. Verify after deploy: `PW_BASE_URL=<SITE_URL> npm test`
+2. Get explicit sign-off before anything production-facing.
+
+## Skills
+
+Installed by Forge (`.claude/skills/`): static-export-build, playwright-verify,
+deploy-static-cpanel, web-accessibility-wizard, ux-researcher,
+design-motion-principles, context-budget, agent-interop.

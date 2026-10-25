@@ -1,0 +1,443 @@
+#!/usr/bin/env bash
+# forge — scaffold a project's Claude Code setup from the Forge skill library.
+#
+#   forge init [target-dir]   interview, then install matching skills + AGENTS.md (+GEMINI.md) + .mcp.json
+#   forge list                show profiles and what each installs
+#   forge add <skill> [dir]   add one skill to an existing project
+#   forge sync [dir]          refresh an installed project's skills from the library
+#   forge doctor [--fix]      check machine-level Claude setup and headless script hygiene
+#
+set -euo pipefail
+
+FORGE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="$FORGE_ROOT/skills"
+PROFILES_DIR="$FORGE_ROOT/profiles"
+TEMPLATES_DIR="$FORGE_ROOT/templates"
+
+b()  { printf '\033[1m%s\033[0m\n' "$*"; }
+ok() { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+no() { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+
+profile_names() {
+  find "$PROFILES_DIR" -name '*.profile' -exec basename {} .profile \; | sort
+}
+
+load_profile() {
+  local p="$PROFILES_DIR/$1.profile"
+  [ -f "$p" ] || no "no such profile: $1 (try: forge list)"
+  LABEL=""; BLURB=""; SKILLS=""; TEMPLATE=""; TOOLS=""
+  # shellcheck disable=SC1090
+  source "$p"
+}
+
+# skills a profile declares, without disturbing the caller's loaded profile
+profile_skills() { ( load_profile "$1" >/dev/null 2>&1 && echo "$SKILLS" ) || true; }
+
+# is $1 present in the space-separated list $2
+in_list() { case " $2 " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+
+# --- forge list --------------------------------------------------------------
+cmd_list() {
+  b "Forge profiles"
+  echo
+  for name in $(profile_names); do
+    load_profile "$name"
+    printf '  \033[1m%s\033[0m — %s\n' "$name" "$LABEL"
+    printf '      %s\n' "$BLURB"
+    printf '      skills: %s\n' "$SKILLS"
+    printf '      tools:  %s\n\n' "$TOOLS"
+  done
+}
+
+# --- forge init --------------------------------------------------------------
+cmd_init() {
+  local target="${1:-}"
+
+  b "Forge — project setup"
+  echo
+
+  if [ -z "$target" ]; then
+    read -r -p "Target project directory [.]: " target
+    target="${target:-.}"
+  fi
+  local resolved
+  resolved="$(cd "$target" 2>/dev/null && pwd)" || no "directory not found: $target"
+  target="$resolved"
+
+  # 1. what kind of project
+  echo
+  b "What kind of project is this?"
+  local names=() i=1
+  for name in $(profile_names); do
+    load_profile "$name"
+    names+=("$name")
+    printf '  %d) %-22s %s\n' "$i" "$name" "$LABEL"
+    i=$((i+1))
+  done
+  echo
+  local choice
+  read -r -p "Choose 1-${#names[@]}: " choice
+  [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#names[@]}" ] \
+    || no "invalid choice: $choice"
+  local profile="${names[$((choice-1))]}"
+  load_profile "$profile"
+
+  # 1b. skills left behind by a previously installed profile
+  local prev="" stale=""
+  if [ -f "$target/.claude/.forge" ]; then
+    prev="$(sed -n 's/^profile=//p' "$target/.claude/.forge" | head -1)"
+    if [ -n "$prev" ] && [ "$prev" != "$profile" ] && [ -f "$PROFILES_DIR/$prev.profile" ]; then
+      for s in $(profile_skills "$prev"); do
+        in_list "$s" "$SKILLS" && continue                  # still needed
+        [ -d "$target/.claude/skills/$s" ] && stale="$stale $s"
+      done
+      stale="${stale# }"
+    fi
+  fi
+
+  # 2. project facts for the AGENTS.md template
+  echo
+  local pname purl pdeploy
+  read -r -p "Project name [$(basename "$target")]: " pname
+  pname="${pname:-$(basename "$target")}"
+  read -r -p "Production URL (blank if none): " purl
+  read -r -p "Deploy target (host:path, blank if none): " pdeploy
+
+  # 3. confirm before writing
+  echo
+  b "Plan"
+  echo "  target:  $target"
+  echo "  profile: $profile ($LABEL)"
+  echo "  skills:  $SKILLS"
+  echo "  writes:  .claude/skills/, AGENTS.md, GEMINI.md → AGENTS.md, .mcp.json"
+  [ -n "$stale" ] && echo "  stale:   $stale  (from previous profile '$prev' — you'll be asked)"
+  echo
+  local confirm
+  read -r -p "Proceed? [y/N] " confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || { echo "aborted."; exit 0; }
+
+  # 4. install skills
+  echo
+  b "Installing"
+  mkdir -p "$target/.claude/skills"
+  for s in $SKILLS; do
+    [ -d "$SKILLS_DIR/$s" ] || no "skill missing from library: $s"
+    rm -rf "${target:?}/.claude/skills/$s"
+    cp -r "$SKILLS_DIR/$s" "$target/.claude/skills/"
+    ok "skill: $s"
+  done
+
+  # 4b. offer to drop skills the previous profile installed and this one does not use
+  if [ -n "$stale" ]; then
+    echo
+    b "Previous profile '$prev' left these behind"
+    for s in $stale; do echo "    $s"; done
+    echo
+    local drop
+    read -r -p "Remove them? [y/N] " drop
+    if [[ "$drop" =~ ^[Yy]$ ]]; then
+      for s in $stale; do rm -rf "${target:?}/.claude/skills/$s"; ok "removed: $s"; done
+    else
+      echo "  kept — remove by hand later if you change your mind."
+    fi
+    echo
+  fi
+
+  # 5. AGENTS.md — the one home for shared project facts. Never clobber.
+  #    Claude Code discovers AGENTS.md natively; Antigravity/Gemini reaches it
+  #    through the GEMINI.md symlink below. A project that gets only a CLAUDE.md
+  #    starts life invisible to the second agent — see the agent-interop skill.
+  local tpl="$TEMPLATES_DIR/$TEMPLATE"
+  if [ -f "$target/AGENTS.md" ]; then
+    cp "$tpl" "$target/AGENTS.md.forge-new"
+    ok "AGENTS.md exists — template written to AGENTS.md.forge-new (merge by hand)"
+  else
+    sed -e "s|<PROJECT_NAME>|$pname|g" \
+        -e "s|<SITE_URL>|${purl:-TBD}|g" \
+        -e "s|<DEPLOY_TARGET>|${pdeploy:-TBD}|g" \
+        "$tpl" > "$target/AGENTS.md"
+    ok "AGENTS.md"
+  fi
+
+  # 5b. GEMINI.md — symlink, so Antigravity reads the same bytes. Never clobber.
+  #     Relative target on purpose: the repo stays portable across machines.
+  if [ -e "$target/GEMINI.md" ] || [ -L "$target/GEMINI.md" ]; then
+    ok "GEMINI.md exists — left untouched"
+  else
+    ln -s AGENTS.md "$target/GEMINI.md"
+    ok "GEMINI.md → AGENTS.md"
+  fi
+
+  # 5c. An existing CLAUDE.md is left alone, but it is now a drift risk: shared
+  #     facts belong in AGENTS.md. Point it out rather than silently allowing two homes.
+  if [ -f "$target/CLAUDE.md" ]; then
+    printf '  \033[33m!\033[0m %s\n' "CLAUDE.md exists — keep only Claude-specific content in it; run the agent-interop skill in audit mode to check for drift"
+  fi
+
+  # 6. .mcp.json — never clobber
+  if [ -f "$target/.mcp.json" ]; then
+    ok ".mcp.json exists — left untouched"
+  elif [ -f "$TEMPLATES_DIR/mcp.json" ]; then
+    cp "$TEMPLATES_DIR/mcp.json" "$target/.mcp.json"
+    ok ".mcp.json"
+  fi
+
+  # 7. record what was installed, so sync knows
+  printf 'profile=%s\nforged=%s\n' "$profile" "$(date +%F)" > "$target/.claude/.forge"
+
+  echo
+  b "Done"
+  echo "  Required tools: $TOOLS"
+  echo "  Next: edit AGENTS.md, then run 'claude' from $target"
+}
+
+# --- forge add ---------------------------------------------------------------
+cmd_add() {
+  local skill="${1:-}"; local target="${2:-.}"
+  [ -n "$skill" ] || no "usage: forge add <skill> [dir]"
+  [ -d "$SKILLS_DIR/$skill" ] || no "no such skill: $skill (available: $(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | tr '\n' ' '))"
+  target="$(cd "$target" && pwd)"
+  mkdir -p "$target/.claude/skills"
+  rm -rf "${target:?}/.claude/skills/$skill"
+  cp -r "$SKILLS_DIR/$skill" "$target/.claude/skills/"
+  ok "added $skill → $target/.claude/skills/"
+}
+
+# --- forge sync --------------------------------------------------------------
+cmd_sync() {
+  local target="${1:-.}"
+  target="$(cd "$target" && pwd)"
+  [ -d "$target/.claude/skills" ] || no "no .claude/skills in $target — run 'forge init' first"
+  b "Syncing installed skills from library"
+  local n=0
+  for d in "$target/.claude/skills"/*/; do
+    [ -d "$d" ] || continue
+    local s; s="$(basename "$d")"
+    if [ -d "$SKILLS_DIR/$s" ]; then
+      rm -rf "${d:?}"; cp -r "$SKILLS_DIR/$s" "$target/.claude/skills/"
+      ok "$s"; n=$((n+1))
+    else
+      printf '  \033[33m·\033[0m %s (not in library — left alone)\n' "$s"
+    fi
+  done
+  echo "  $n skill(s) refreshed."
+}
+
+# --- forge doctor ------------------------------------------------------------
+cmd_doctor() {
+  local fix=0
+  for arg in "$@"; do
+    if [ "$arg" = "--fix" ]; then fix=1; fi
+  done
+
+  b "Forge — system doctor"
+  echo
+  local findings=0
+
+  # 1. Check cleanupPeriodDays in ~/.claude/settings.json
+  local settings_file="$HOME/.claude/settings.json"
+  if [ ! -f "$settings_file" ]; then
+    printf '  \033[31m✗\033[0m %s\n' "$settings_file not found"
+    findings=$((findings + 1))
+    if [ "$fix" -eq 1 ]; then
+      local ans
+      read -r -p "Create $settings_file with cleanupPeriodDays: 45? [y/N] " ans
+      if [[ "$ans" =~ ^[Yy]$ ]]; then
+        mkdir -p "$(dirname "$settings_file")"
+        echo '{"cleanupPeriodDays": 45}' > "$settings_file"
+        ok "created $settings_file with cleanupPeriodDays: 45"
+        findings=$((findings - 1))
+      fi
+    fi
+  else
+    local cpd=""
+    if command -v jq >/dev/null 2>&1; then
+      cpd="$(jq -r '.cleanupPeriodDays // empty' "$settings_file" 2>/dev/null || true)"
+    fi
+    if [ -z "$cpd" ]; then
+      cpd="$(grep -o '"cleanupPeriodDays"[[:space:]]*:[[:space:]]*[0-9]*' "$settings_file" 2>/dev/null | head -1 | awk -F: '{print $2}' | tr -d '[:space:]' || true)"
+    fi
+
+    if [ -n "$cpd" ] && [ "$cpd" -ge 1 ] 2>/dev/null; then
+      ok "cleanupPeriodDays: present ($cpd)"
+    else
+      printf '  \033[31m✗\033[0m cleanupPeriodDays missing from %s (governs transcript retention, suggest 45)\n' "$settings_file"
+      findings=$((findings + 1))
+      if [ "$fix" -eq 1 ]; then
+        local ans
+        read -r -p "Set cleanupPeriodDays to 45 in $settings_file? [y/N] " ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+          if command -v jq >/dev/null 2>&1; then
+            jq '.cleanupPeriodDays = 45' "$settings_file" > "$settings_file.tmp" && mv "$settings_file.tmp" "$settings_file"
+          else
+            python3 -c 'import json, sys; p=sys.argv[1]; d=json.load(open(p)) if open(p).read().strip() else {}; d["cleanupPeriodDays"]=45; json.dump(d,open(p,"w"),indent=2)' "$settings_file" 2>/dev/null || true
+          fi
+          ok "cleanupPeriodDays set to 45 in $settings_file"
+          findings=$((findings - 1))
+        fi
+      fi
+    fi
+  fi
+
+  # 2. Check headless claude -p invocations in scripts
+  local scan_dirs=()
+  if [ -d "$HOME/.claude/projects" ]; then
+    while IFS= read -r c; do
+      if [ -n "$c" ] && [ -d "$c" ] && [ "$c" != "$HOME" ] && [[ ! "$c" =~ ^/tmp ]]; then
+        scan_dirs+=("$c")
+      fi
+    done < <(grep -h -m1 -o '"cwd":"[^"]*"' "$HOME/.claude/projects"/*/*.jsonl 2>/dev/null | sed -e 's/"cwd":"//' -e 's/"$//' | sort -u || true)
+  fi
+
+  local ws_root
+  ws_root="$(cd "$FORGE_ROOT/../.." 2>/dev/null && pwd || true)"
+  if [ -n "$ws_root" ] && [ -d "$ws_root" ] && [ "$ws_root" != "$HOME" ]; then
+    scan_dirs+=("$ws_root")
+  fi
+  [ -d "$HOME/scripts" ] && scan_dirs+=("$HOME/scripts")
+  [ -d "$HOME/bin" ] && scan_dirs+=("$HOME/bin")
+  [ -d "$HOME/.local/bin" ] && scan_dirs+=("$HOME/.local/bin")
+  scan_dirs+=("$(pwd)")
+
+  local uniq_dirs=()
+  while IFS= read -r d; do
+    [ -d "$d" ] && uniq_dirs+=("$d")
+  done < <(printf '%s\n' "${scan_dirs[@]}" | sort -u)
+
+  local candidate_scripts=()
+  while IFS= read -r f; do
+    [ -f "$f" ] && candidate_scripts+=("$f")
+  done < <(
+    for d in "${uniq_dirs[@]}"; do
+      find "$d" \
+        -type d \( -name ".*" -o -name "node_modules" -o -name "vendor" -o -name "venv" -o -name ".venv" -o -name "__pycache__" -o -name "cache" -o -name "dist" -o -name "build" -o -name "file-history" \) -prune -o \
+        -type f \( -name "*.py" -o -name "*.sh" -o -name "*.bash" -o -name "*.js" -o -name "*.mjs" -o -name "*.ts" \) -print 2>/dev/null
+    done | sort -u
+  )
+
+  local invocations_checked=0
+  for f in "${candidate_scripts[@]}"; do
+    grep -q -E -- '(-p|--print)' "$f" 2>/dev/null || continue
+    grep -q -i -E -- '(claude|draft_cmd)' "$f" 2>/dev/null || continue
+
+    while IFS=: read -r lnum _line; do
+      [ -n "$lnum" ] || continue
+      invocations_checked=$((invocations_checked + 1))
+      local start=$(( lnum > 5 ? lnum - 5 : 1 ))
+      local end=$(( lnum + 10 ))
+      local has_persistence=0
+      if sed -n "${start},${end}p" "$f" | grep -q -- "--no-session-persistence"; then
+        has_persistence=1
+      fi
+
+      if [ "$has_persistence" -eq 1 ]; then
+        ok "$f:$lnum: claude -p compliant (--no-session-persistence present)"
+      else
+        printf '  \033[31m✗\033[0m %s:%s: headless claude -p invocation missing --no-session-persistence\n' "$f" "$lnum"
+        findings=$((findings + 1))
+        if [ "$fix" -eq 1 ]; then
+          local ans
+          read -r -p "Add --no-session-persistence to $f near line $lnum? [y/N] " ans
+          if [[ "$ans" =~ ^[Yy]$ ]]; then
+            if [[ "$f" =~ \.(sh|bash)$ ]]; then
+              sed -i "${lnum}s/claude -p/claude -p --no-session-persistence/" "$f"
+              sed -i "${lnum}s/claude --print/claude --print --no-session-persistence/" "$f"
+              ok "updated $f"
+              findings=$((findings - 1))
+            else
+              echo "  Manual edit recommended for $f at line $lnum: add '--no-session-persistence' argument."
+            fi
+          fi
+        fi
+      fi
+    done < <(awk '
+      BEGIN { in_doc = 0 }
+      /"""/ || /\047\047\047/ {
+        n = gsub(/"""/, "", $0) + gsub(/\047\047\047/, "", $0)
+        if (n % 2 != 0) in_doc = !in_doc
+        next
+      }
+      in_doc { next }
+      /^[[:space:]]*(#|\/\/|\*|raise|print\(|console\.log)/ { next }
+      {
+        line = $0
+        has_cmd = (tolower(line) ~ /(claude|draft_cmd)/)
+        has_flag = (line ~ /"-p"|\047-p\047|[[:space:]]-p([[:space:]]|$)|--print/)
+        if (has_cmd && has_flag) {
+          print NR ":" line
+        }
+      }
+    ' "$f" 2>/dev/null || true)
+  done
+
+  if [ "$invocations_checked" -eq 0 ]; then
+    ok "scripts: no headless claude -p invocations found"
+  fi
+
+  # 3. Check zero-message transcripts in ~/.claude/projects/*/*.jsonl
+  local zero_transcripts=()
+  local zero_sizes=()
+  if [ -d "$HOME/.claude/projects" ]; then
+    for f in "$HOME/.claude/projects"/*/*.jsonl; do
+      [ -f "$f" ] || continue
+      if ! grep -q -E '"type"[[:space:]]*:[[:space:]]*"(user|assistant)"' "$f" 2>/dev/null; then
+        local sz
+        sz="$(wc -c < "$f" 2>/dev/null | tr -d ' ')"
+        zero_transcripts+=("$f")
+        zero_sizes+=("$sz")
+      fi
+    done
+  fi
+
+  if [ "${#zero_transcripts[@]}" -gt 0 ]; then
+    findings=$((findings + ${#zero_transcripts[@]}))
+    for i in "${!zero_transcripts[@]}"; do
+      local zf="${zero_transcripts[$i]}"
+      local zsz="${zero_sizes[$i]}"
+      printf '  \033[31m✗\033[0m %s (%s bytes): zero-message transcript\n' "$zf" "$zsz"
+      if [ "$fix" -eq 1 ]; then
+        local ans
+        read -r -p "Remove zero-message transcript $zf? [y/N] " ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+          rm -f "$zf"
+          ok "removed $zf"
+          findings=$((findings - 1))
+        fi
+      fi
+    done
+  else
+    ok "transcripts: no zero-message transcripts in ~/.claude/projects/"
+  fi
+
+  # 4. Project memory preservation check (Never touch directories with memory/)
+  local mem_preserved=0
+  if [ -d "$HOME/.claude/projects" ]; then
+    for d in "$HOME/.claude/projects"/*/; do
+      [ -d "$d" ] || continue
+      if [ -d "$d/memory" ] && [ -n "$(ls -A "$d/memory" 2>/dev/null)" ]; then
+        mem_preserved=$((mem_preserved + 1))
+      fi
+    done
+  fi
+  ok "project memories: $mem_preserved directories preserved (contain memory/)"
+
+  # Summary and exit code
+  echo
+  if [ "$findings" -eq 0 ]; then
+    b "Doctor summary: clean (0 issues)"
+    return 0
+  else
+    b "Doctor summary: $findings issue(s) found"
+    return 1
+  fi
+}
+
+case "${1:-}" in
+  init)   shift; cmd_init "$@" ;;
+  list)   cmd_list ;;
+  add)    shift; cmd_add "$@" ;;
+  sync)   shift; cmd_sync "$@" ;;
+  doctor) shift; cmd_doctor "$@" ;;
+  *)      sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac
+

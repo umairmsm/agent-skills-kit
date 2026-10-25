@@ -1,0 +1,5 @@
+LABEL="WordPress (Bedrock + DDEV)"
+BLURB="Composer-managed WordPress with Bedrock layout, DDEV local dev, WP-CLI ops, Pest tests. For modern WordPress applications and sites."
+SKILLS="wordpress-modern wp-performance wp-performance-review wp-plugin-development wp-wpcli-and-ops web-accessibility-wizard ux-researcher design-motion-principles context-budget agent-interop"
+TEMPLATE="AGENTS.md.wordpress-bedrock"
+TOOLS="php>=8.2 composer ddev wp-cli rsync"

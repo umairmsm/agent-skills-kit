@@ -1,0 +1,18 @@
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Node / Python / Temp
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+
+# Local Claude runtime artifacts
+.claude/projects/
+.claude/memory/

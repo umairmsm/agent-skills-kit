@@ -1,0 +1,63 @@
+# <PROJECT_NAME> — shared agent context
+
+> **This is the one home for shared project facts.** Claude Code reads it natively;
+> Antigravity/Gemini reads it through `GEMINI.md`, a symlink to this file. Put anything
+> both agents need here. A tool-specific `CLAUDE.md` or `GEMINI.md` should hold only that
+> tool's own machinery or role — never a second copy of a fact from this file.
+>
+> Branches: Claude on `claude/<topic>`, Antigravity on `ag/<topic>`; neither on the
+> default branch unless the owner asks.
+
+NestJS backend + Postgres/pgvector + Redis + MinIO, rendering a **static export**
+that is deployed to a domain root. Write this file fresh per project — delete every
+placeholder below that does not apply.
+
+## Shape
+
+| | Live site | Backend |
+|---|---|---|
+| What | static export from `static-export/` | NestJS + Postgres/pgvector + Redis + MinIO |
+| Where | <SITE_URL> | Docker Compose locally |
+| Deploy | `npm run export:static` then rsync | <DEPLOY_TARGET> |
+
+## Commands
+
+```bash
+make up          # start infra + backend
+make dev         # backend on host, watch mode
+make migrate     # apply migrations
+make db-check    # verify DB + extensions
+cd backend && npm run export:static   # regenerate the static site
+npm test         # Playwright suites
+```
+
+## Hard rules
+
+- **Never edit `static-export/`** — generated, gitignored, wiped every run. Fix the
+  generator (`backend/scripts/export-static.ts`) and regenerate.
+- **Never enable TypeORM `synchronize`.** Schema changes are migrations only.
+- Build production with `SITE_URL=<SITE_URL>`; build staging with `STAGING=1` (adds noindex).
+- The export is root-absolute — it **must** be served from a domain root.
+- Regenerating needs Postgres up (`make up`) — the export reads from the database.
+
+## Deploy
+
+Target: `<DEPLOY_TARGET>`
+Always `rsync --dry-run` first. Verify after:
+`PW_BASE_URL=<SITE_URL> npm test`
+
+## Locked decisions
+
+- <fill in: anything the owner has actually locked — brand, URLs, no-go changes>
+
+## Operating rules
+
+1. Confirm destructive commands before running (`docker compose down -v`, `rsync --delete`).
+2. Get explicit sign-off before anything production-facing.
+3. Keep a SESSION_LOG.md of confirmed steps.
+
+## Skills
+
+Installed by Forge (`.claude/skills/`): nest-api-patterns, pg-pgvector-ops,
+docker-stack-dev, static-export-build, playwright-verify, deploy-static-cpanel,
+web-accessibility-wizard, ux-researcher, design-motion-principles, context-budget, agent-interop.

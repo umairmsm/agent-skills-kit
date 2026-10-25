@@ -1,0 +1,5 @@
+LABEL="NestJS + Postgres/pgvector + static export"
+BLURB="Database-backed NestJS backend that renders a static HTML site. Docker Compose infra (Postgres/Redis/MinIO), Playwright verification, rsync deploy to a domain root."
+SKILLS="nest-api-patterns pg-pgvector-ops docker-stack-dev static-export-build playwright-verify deploy-static-cpanel web-accessibility-wizard ux-researcher design-motion-principles context-budget agent-interop"
+TEMPLATE="AGENTS.md.nest-pg-static"
+TOOLS="node>=20 docker docker-compose rsync openssh-client"
