@@ -1,15 +1,20 @@
-# Forge
+# agent-skills-kit 🛠️
 
 <p align="center">
-  <img src="assets/hero-banner.svg" alt="Forge - Universal Multi-Agent Scaffolder & Skill Library" width="100%"><br />
-  <a href="https://github.com/umairmsm/forge/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/CI-Passing%20%E2%9C%93-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Status"></a>
+  <img src="assets/hero-banner.svg" alt="agent-skills-kit - Universal Multi-Agent Scaffolder & Skill Library" width="100%"><br />
+  <a href="https://github.com/umairmsm/agent-skills-kit/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/CI-Passing%20%E2%9C%93-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Status"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://github.com/umairmsm/forge/issues"><img src="https://img.shields.io/badge/Contribute-5%20Good%20First%20Issues-3B82F6?style=for-the-badge&logo=github" alt="Good First Issues"></a>
+  <a href="https://github.com/umairmsm/agent-skills-kit/issues"><img src="https://img.shields.io/badge/Contribute-5%20Good%20First%20Issues-3B82F6?style=for-the-badge&logo=github" alt="Good First Issues"></a>
   <a href="#4-skill-library-inventory"><img src="https://img.shields.io/badge/Skills-16%20Production%20Tested-7C3AED?style=for-the-badge" alt="16 Curated Skills"></a>
 </p>
 
 <p align="center">
-  <b>Stack-based skill library and multi-agent context scaffolder</b> for Claude Code, Antigravity, and AI teams.<br />
+  Crafted with receipts by <b><a href="https://github.com/umairmsm">Umair (@umairmsm)</a></b><br>
+  <i>Applied Homelab AI Practitioner · Bare-Metal Multi-Agent Architectures</i>
+</p>
+
+<p align="center">
+  <b>Stack-based skill library and universal context scaffolder</b> for Claude Code, Antigravity, and AI teams.<br />
   Your stack rules, proven architectural skills, and session hygiene, wired into your agents in seconds.
 </p>
 <p align="center">
@@ -18,7 +23,7 @@
 </p>
 
 <p align="center">
-  <img width="800" alt="Forge Demo in Action" src="assets/demo.gif" />
+  <img width="800" alt="agent-skills-kit Demo in Action" src="assets/demo.gif" />
 </p>
 
 ## Features
@@ -32,6 +37,15 @@
 
 ---
 
+## 👨‍💻 Maintainer Field Notes: Why I Built This
+
+> *"When running unattended autonomous coding agents across multiple local projects on my homelab runner, I kept hitting the same two problems: different AI tools (Claude Code, Cursor, Antigravity) drifted out of sync with conflicting rules, and background runs filled my machine with thousands of abandoned, zero-message CLI session transcripts. I built `agent-skills-kit` to enforce a single universal contract (`AGENTS.md`), inject curated stack skills, and keep my developer environment in top hygiene."*  
+> — **Umair ([@umairmsm](https://github.com/umairmsm))**, *Applied Homelab AI Practitioner*
+
+👉 *Read the full architectural breakdown on [pirateclasses.com](https://pirateclasses.com).*
+
+---
+
 ## 1. The Problem: Rule Drift & Context Bloat
 
 When engineering teams use multiple AI coding tools across different repositories, their workflows break in subtle ways:
@@ -41,7 +55,7 @@ When engineering teams use multiple AI coding tools across different repositorie
 
 ### The Contrast Matrix
 
-| The Fragile Manual Way ❌ | The `forge` Scaffolding Way ✅ |
+| The Fragile Manual Way ❌ | The `agent-skills-kit` Scaffolding Way ✅ |
 |---|---|
 | **Multi-Tool Rule Drift**: Maintaining separate instructions for Cursor, Claude Code, and Antigravity leads to out-of-sync agent behavior. | **Universal Contract**: Single `AGENTS.md` source-of-truth with zero-drift symlinks (`CLAUDE.md`, `GEMINI.md`, `.cursorrules`). |
 | **Generic Hallucinations**: Agents guess architecture, writing insecure APIs or untested database queries. | **Curated Production Skills**: 16 battle-tested skills injected directly into `.claude/skills/` tailored to the exact stack. |
@@ -104,7 +118,7 @@ flowchart TD
 Clone the repository and add `bin/` to your PATH (or run directly):
 
 ```bash
-git clone https://github.com/umairmsm/forge.git ~/.forge
+git clone https://github.com/umairmsm/agent-skills-kit.git ~/.forge
 export PATH="$HOME/.forge/bin:$PATH"
 ```
 
@@ -236,15 +250,15 @@ Automated background scripts and headless invocations often degrade developer ma
 
 ## 6. Community & Good First Issues
 
-We actively welcome community contributions! Check out our live [Good First Issues on GitHub](https://github.com/umairmsm/forge/issues):
+We actively welcome community contributions! Check out our live [Good First Issues on GitHub](https://github.com/umairmsm/agent-skills-kit/issues):
 
 | Issue | Category | Description |
 |---|---|---|
-| [#1](https://github.com/umairmsm/forge/issues/1) | `profile/fastapi` | **FastAPI + Tortoise ORM + Redis Profile**: Add stack profile and verification tests for Python modern async APIs. |
-| [#2](https://github.com/umairmsm/forge/issues/2) | `profile/go-chi` | **Go + Chi Router + Postgres Profile**: Add lightweight Go microservice profile with Docker Compose support. |
-| [#3](https://github.com/umairmsm/forge/issues/3) | `skill/security-audit` | **OWASP Top 10 Security Skill**: Add automated pre-commit security review skill for dependencies and headers. |
-| [#4](https://github.com/umairmsm/forge/issues/4) | `doctor/gemini-check` | **Antigravity / Gemini Configuration Auditor**: Add doctor checks for Antigravity workspace config and symlink integrity. |
-| [#5](https://github.com/umairmsm/forge/issues/5) | `profile/sveltekit` | **SvelteKit + Tailwind CSS Profile**: Add modern reactive frontend profile with Playwright test scaffolding. |
+| [#1](https://github.com/umairmsm/agent-skills-kit/issues/1) | `profile/fastapi` | **FastAPI + Tortoise ORM + Redis Profile**: Add stack profile and verification tests for Python modern async APIs. |
+| [#2](https://github.com/umairmsm/agent-skills-kit/issues/2) | `profile/go-chi` | **Go + Chi Router + Postgres Profile**: Add lightweight Go microservice profile with Docker Compose support. |
+| [#3](https://github.com/umairmsm/agent-skills-kit/issues/3) | `skill/security-audit` | **OWASP Top 10 Security Skill**: Add automated pre-commit security review skill for dependencies and headers. |
+| [#4](https://github.com/umairmsm/agent-skills-kit/issues/4) | `doctor/gemini-check` | **Antigravity / Gemini Configuration Auditor**: Add doctor checks for Antigravity workspace config and symlink integrity. |
+| [#5](https://github.com/umairmsm/agent-skills-kit/issues/5) | `profile/sveltekit` | **SvelteKit + Tailwind CSS Profile**: Add modern reactive frontend profile with Playwright test scaffolding. |
 
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -252,5 +266,5 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_
 
 ## 7. License & Third-Party Notice
 
-- Forge is released under the [MIT License](LICENSE). Copyright (c) 2026 [umairmsm](https://github.com/umairmsm).
+- agent-skills-kit is released under the [MIT License](LICENSE). Copyright (c) 2026 [umairmsm](https://github.com/umairmsm).
 - Skills derived from community works preserve upstream licenses and author attributions (see [CHANGELOG.md](CHANGELOG.md) and individual `SKILL.md` frontmatter).
