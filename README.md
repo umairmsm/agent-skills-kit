@@ -4,6 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/umairmsm/forge/actions/workflows/ci.yml/badge.svg)](https://github.com/umairmsm/forge/actions/workflows/ci.yml)
+[![Good First Issues](https://img.shields.io/github/issues/umairmsm/forge/good%20first%20issue?color=brightgreen&label=Good%20First%20Issues)](https://github.com/umairmsm/forge/issues)
 
 Every AI coding assistant performs better when given explicit stack constraints, proven architectural patterns, and reusable verification skills. `forge` automates scaffolding these capabilities into your projects in seconds.
 
