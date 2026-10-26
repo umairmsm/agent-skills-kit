@@ -1,8 +1,7 @@
-<p align="center">
-  <img src="assets/hero-banner.svg" alt="forge - Universal Multi-Agent Scaffolder & Skill Library" width="100%">
-</p>
+# Forge
 
 <p align="center">
+  <img src="assets/hero-banner.svg" alt="Forge - Universal Multi-Agent Scaffolder & Skill Library" width="100%"><br />
   <a href="https://github.com/umairmsm/forge/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/CI-Passing%20%E2%9C%93-10B981?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI Status"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge" alt="License: MIT"></a>
   <a href="https://github.com/umairmsm/forge/issues"><img src="https://img.shields.io/badge/Contribute-5%20Good%20First%20Issues-3B82F6?style=for-the-badge&logo=github" alt="Good First Issues"></a>
@@ -10,18 +9,26 @@
 </p>
 
 <p align="center">
-  <b>Stack-based skill library and multi-agent context scaffolder</b> for Claude Code, Antigravity, and AI-assisted engineering teams.
+  <b>Stack-based skill library and multi-agent context scaffolder</b> for Claude Code, Antigravity, and AI teams.<br />
+  Your stack rules, proven architectural skills, and session hygiene, wired into your agents in seconds.
 </p>
-
----
-
-## ⚡ Product Proof in Motion
-
-Watch `forge` scaffold a project in seconds: selecting stack profiles, binding universal contracts (`AGENTS.md` ⟷ `CLAUDE.md`), and auditing system hygiene with `forge doctor`:
+<p align="center">
+  面向 Claude Code 与 Antigravity 的全栈智能体脚手架与技能库，<br />
+  一键注入架构规则、专业技能与会话卫士，彻底终结多智能体规则漂移。
+</p>
 
 <p align="center">
-  <img src="assets/demo.gif" alt="Forge CLI Demo in Action" width="100%">
+  <img width="800" alt="Forge Demo in Action" src="assets/demo.gif" />
 </p>
+
+## Features
+
+- **Universal Contracts:** Scaffolds single-source-of-truth `AGENTS.md` with zero-drift symlinks (`CLAUDE.md`, `GEMINI.md`, `.cursorrules`) across all AI coding assistants.
+- **16 Battle-Tested Skills:** Instantly injects production skills into `.claude/skills/` (PostgreSQL/pgvector, WCAG 2.2 accessibility, motion design, Playwright verification).
+- **System Hygiene Doctor:** `forge doctor` catches headless CLI session persistence leaks, cleans zero-message transcripts, and protects project memories.
+- **Stack-Specific Profiles:** Pre-configured architectures for NestJS + PostgreSQL, Static Sites, WordPress Bedrock, with single-command extensible profiles.
+- **Token Optimization:** Curated skills guide agents to write clean code without hallucinating deprecated libraries or wasting token context budgets.
+- **Works Everywhere:** Pure bash and POSIX sh with zero runtime dependencies across macOS, Linux, Windows (WSL2), and BSD.
 
 ---
 
@@ -103,33 +110,40 @@ export PATH="$HOME/.forge/bin:$PATH"
 
 ### Inspect Available Profiles
 
+Run <kbd>forge list</kbd> to inspect pre-configured stack profiles:
+
 ```bash
 forge list
 ```
 
 Output:
 ```text
-Forge profiles
+╭────────────────────────────────────────────────────────────────────────────╮
+│  🔨 FORGE PROFILES  · Available Agent Context Stacks                       │
+╰────────────────────────────────────────────────────────────────────────────╯
 
-  nest-pg-static — NestJS + Postgres/pgvector + static export
-      Database-backed NestJS backend that renders a static HTML site. Docker Compose infra...
-      skills: nest-api-patterns pg-pgvector-ops docker-stack-dev static-export-build playwright-verify...
-      tools:  node>=20 docker docker-compose rsync openssh-client
+  ╭─ nest-pg-static (NestJS + Postgres/pgvector + static export)──────────────╮
+  │  Database-backed NestJS backend that renders a static HTML site.          │
+  │  📦 Skills: nest-api-patterns · pg-pgvector-ops · docker-stack-dev        │
+  │  🛠️  Tools:  node>=20 · docker · docker-compose · rsync                   │
+  ╰───────────────────────────────────────────────────────────────────────────╯
 
-  static-site — Static site (no backend)
-      Hand-built or generator-produced static HTML/CSS/JS with no runtime...
-      skills: static-export-build playwright-verify deploy-static-cpanel web-accessibility-wizard...
-      tools:  node>=20 rsync openssh-client
+  ╭─ static-site (Static site (no backend))───────────────────────────────────╮
+  │  Hand-built or generator-produced static HTML/CSS/JS with no runtime.     │
+  │  📦 Skills: static-export-build · playwright-verify · web-a11y-wizard     │
+  │  🛠️  Tools:  node>=20 · rsync · openssh-client                            │
+  ╰───────────────────────────────────────────────────────────────────────────╯
 
-  wordpress-bedrock — WordPress (Bedrock + DDEV)
-      Composer-managed WordPress with Bedrock layout, DDEV local dev, WP-CLI ops, Pest tests...
-      skills: wordpress-modern wp-performance wp-performance-review wp-plugin-development...
-      tools:  php>=8.2 composer ddev wp-cli rsync
+  ╭─ wordpress-bedrock (WordPress (Bedrock + DDEV))───────────────────────────╮
+  │  Composer-managed WordPress with Bedrock layout, DDEV local dev, WP-CLI.  │
+  │  📦 Skills: wordpress-modern · wp-performance · wp-plugin-development     │
+  │  🛠️  Tools:  php>=8.2 · composer · ddev · wp-cli · rsync                  │
+  ╰───────────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Scaffold a Project
 
-Navigate to any project root and run:
+Navigate to any project root and run <kbd>forge init .</kbd>:
 
 ```bash
 forge init .
@@ -165,10 +179,21 @@ forge sync .
 
 ### Run System Doctor
 
-Check your development environment and automated scripts for Claude Code session hygiene:
+Run <kbd>forge doctor</kbd> to check your development environment for Claude Code session hygiene:
 
 ```bash
 forge doctor
+```
+
+```text
+╭────────────────────────────────────────────────────────────────────────────╮
+│  🩺 FORGE DOCTOR  · Claude Code & Session Hygiene Auditor                  │
+╰────────────────────────────────────────────────────────────────────────────╯
+
+   PASS  cleanupPeriodDays: active (45 days)
+   PASS  project memories: 22 directories preserved (contain memory/)
+   WARN  headless script: pmo-standup.sh:62 missing --no-session-persistence
+   FAIL  transcript leak: zero-message transcript found
 ```
 
 ---
